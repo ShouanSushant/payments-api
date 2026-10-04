@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payments Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Payments Dashboard</h1>
+    <label class="key">
+      API key
+      <input id="apiKey" type="password" value="" autocomplete="off">
+    </label>
+  </header>
+
+  <main>
+    <div id="message" class="message" role="status" hidden></div>
+
+    <section class="card">
+      <h2>Invoices</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Customer</th><th>Description</th>
+            <th class="num">Total</th><th class="num">Paid</th><th class="num">Outstanding</th>
+            <th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="invoiceRows"></tbody>
+      </table>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Record a payment</h2>
+        <form id="paymentForm">
+          <label>Invoice <select id="payInvoice" required></select></label>
+          <label>Amount ($) <input id="payAmount" inputmode="decimal" placeholder="25.00" required></label>
+          <button type="submit">Record payment</button>
+          <p class="hint">Each click sends a unique Idempotency-Key, so a retry can never charge twice.</p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Refund a payment</h2>
+        <form id="refundForm">
+          <label>Payment <select id="refundPayment" required></select></label>
+          <label>Amount ($) <input id="refundAmount" inputmode="decimal" placeholder="10.00" required></label>
+          <label>Reason <input id="refundReason" maxlength="200" placeholder="Damaged item" required></label>
+          <button type="submit">Issue refund</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>New invoice</h2>
+        <form id="invoiceForm">
+          <label>Customer <select id="invoiceCustomer" required></select></label>
+          <label>Amount ($) <input id="invoiceAmount" inputmode="decimal" placeholder="120.00" required></label>
+          <label>Description <input id="invoiceDescription" maxlength="200" placeholder="Card terminal rental" required></label>
+          <button type="submit">Create invoice</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>New customer</h2>
+        <form id="customerForm">
+          <label>Name <input id="customerName" maxlength="100" required></label>
+          <label>Email <input id="customerEmail" type="email" maxlength="200" required></label>
+          <button type="submit">Add customer</button>
+        </form>
+      </section>
+    </div>
+
+    <p class="footer">API docs: <a href="/swagger">/swagger</a></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+:root {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --text: #1b2333;
+  --muted: #5d6779;
+  --border: #dde2ea;
+  --accent: #2f6fed;
+  --ok-bg: #e6f6ee;
+  --ok-text: #1d6b45;
+  --err-bg: #fdecee;
+  --err-text: #a3253a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+
+.key { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.key input { width: 200px; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.grid .card { margin-bottom: 0; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+form { display: flex; flex-direction: column; gap: 10px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+
+input, select {
+  font: inherit;
+  color: var(--text);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+button {
+  font: inherit;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.6; cursor: wait; }
+button.small { padding: 4px 10px; font-size: 13px; background: #6b7487; }
+
+.badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.badge.open { background: #e8eefc; color: #2f4fa8; }
+.badge.partiallypaid { background: #fff3dc; color: #8a5a00; }
+.badge.paid { background: var(--ok-bg); color: var(--ok-text); }
+.badge.void { background: #eceef2; color: var(--muted); }
+
+.message { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+.message.ok { background: var(--ok-bg); color: var(--ok-text); }
+.message.error { background: var(--err-bg); color: var(--err-text); }
+
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.footer { font-size: 13px; color: var(--muted); }
