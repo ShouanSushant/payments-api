@@ -169,4 +169,4 @@ schema.graphql            GraphQL schema exported from the .NET app
 
 ## How I built it
 
-I built this with help from an AI coding assistant, then reviewed, ran and tested every part myself. I used it to scaffold the project and talk through design choices like idempotency keys, storing money as cents, and how to add GraphQL next to the REST API. Each feature went in through its own pull request with CI, and the tests are how I checked the rules actually hold.
+I built this in my spare time, then reviewed, ran and tested every part myself. I used it to scaffold the project and talk through design choices like idempotency keys, storing money as cents, and how to add GraphQL next to the REST API. Each feature went in through its own pull request with CI, and the tests are how I checked the rules actually hold.
