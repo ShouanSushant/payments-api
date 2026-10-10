@@ -12,6 +12,7 @@ Customers get invoices, invoices take payments (full or partial), and payments c
 - **Money stored as integer cents**, never floating point
 - **API key authentication**: only a SHA-256 hash of the key is stored, compared in constant time
 - **Input validation** on every request, plus clean JSON error responses (RFC 7807 problem details)
+- **GraphQL endpoint** (Hot Chocolate) alongside the REST API, sharing the same service layer
 - **Swagger UI** for trying the API in the browser
 - **Dashboard** page to create customers and invoices, take payments and issue refunds
 - **Unit tests** covering the payment, refund and security rules
@@ -67,6 +68,28 @@ curl -X POST http://localhost:5080/api/invoices/1/payments \
 ```
 
 Sending that same request again returns the same payment instead of charging twice.
+
+## GraphQL
+
+The same operations are also available as GraphQL at `/graphql`, built with [Hot Chocolate](https://chillicream.com/docs/hotchocolate). Open http://localhost:5080/graphql in a browser for the query editor, and add the header `X-Api-Key: dev-key-change-me` in its connection settings.
+
+```graphql
+mutation {
+  recordPayment(invoiceId: 1, amountCents: 2500, idempotencyKey: "checkout-42") {
+    status
+    outstandingCents
+  }
+}
+```
+
+Both APIs call the same `PaymentService`, so the rules are enforced once. Business rule errors come back with a `PAYMENT_RULE` or `NOT_FOUND` code in `extensions.code`.
+
+`schema.graphql` is generated from the C# code. After changing the GraphQL types, regenerate it:
+
+```bash
+cd src/PaymentsApi
+dotnet run -- schema export --output ../../schema.graphql
+```
 
 ## Design notes
 
