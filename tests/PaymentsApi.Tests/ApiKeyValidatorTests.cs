@@ -2,29 +2,28 @@ using PaymentsApi.Infrastructure;
 
 namespace PaymentsApi.Tests;
 
-[TestClass]
 public class ApiKeyValidatorTests
 {
     private static readonly byte[] ExpectedHash = ApiKeyValidator.Hash("correct-key");
 
-    [TestMethod]
+    [Fact]
     public void Matches_CorrectKey_ReturnsTrue()
     {
-        Assert.IsTrue(ApiKeyValidator.Matches("correct-key", ExpectedHash));
+        Assert.True(ApiKeyValidator.Matches("correct-key", ExpectedHash));
     }
 
-    [DataTestMethod]
-    [DataRow("wrong-key")]
-    [DataRow("Correct-Key")]
-    [DataRow("")]
+    [Theory]
+    [InlineData("wrong-key")]
+    [InlineData("Correct-Key")]
+    [InlineData("")]
     public void Matches_WrongOrEmptyKey_ReturnsFalse(string provided)
     {
-        Assert.IsFalse(ApiKeyValidator.Matches(provided, ExpectedHash));
+        Assert.False(ApiKeyValidator.Matches(provided, ExpectedHash));
     }
 
-    [TestMethod]
+    [Fact]
     public void Matches_NullKey_ReturnsFalse()
     {
-        Assert.IsFalse(ApiKeyValidator.Matches(null, ExpectedHash));
+        Assert.False(ApiKeyValidator.Matches(null, ExpectedHash));
     }
 }
