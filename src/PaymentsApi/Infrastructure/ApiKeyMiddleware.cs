@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PaymentsApi.Infrastructure;
 
-// Every /api request needs an X-Api-Key header.
+// Every /api and /graphql request needs an X-Api-Key header.
 // The real key is never stored: config only holds its SHA-256 hash.
 public class ApiKeyMiddleware
 {
@@ -31,8 +31,18 @@ public class ApiKeyMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // The dashboard page and Swagger are public; only the API itself is protected.
-        if (!context.Request.Path.StartsWithSegments("/api"))
+        var path = context.Request.Path;
+        var isRest = path.StartsWithSegments("/api");
+        var isGraphQL = path.StartsWithSegments("/graphql");
+
+        // Opening /graphql in a browser shows Hot Chocolate's query editor. That page
+        // is public (like Swagger), but running a query against the data is not.
+        var isGraphQLEditorPage = isGraphQL
+            && HttpMethods.IsGet(context.Request.Method)
+            && !context.Request.Query.ContainsKey("query");
+
+        // The dashboard page and Swagger are public; only the APIs themselves are protected.
+        if ((!isRest && !isGraphQL) || isGraphQLEditorPage)
         {
             await _next(context);
             return;

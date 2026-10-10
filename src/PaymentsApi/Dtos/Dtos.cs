@@ -61,7 +61,7 @@ public record InvoiceDto(
     long TotalCents,
     long PaidCents,
     long OutstandingCents,
-    string Status,
+    InvoiceStatus Status,
     DateTime CreatedAt,
     List<PaymentDto> Payments);
 
@@ -82,7 +82,7 @@ public static class DtoMapper
         i.TotalCents,
         InvoiceMath.NetPaidCents(i),
         InvoiceMath.OutstandingCents(i),
-        i.Status.ToString(),
+        i.Status,
         i.CreatedAt,
         i.Payments.OrderBy(p => p.Id).Select(p => ToPaymentDto(p)).ToList());
 
