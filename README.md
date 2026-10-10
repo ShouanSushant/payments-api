@@ -1,6 +1,6 @@
 # Payments API
 
-A small invoicing and payments service built with **C# / ASP.NET Core 8**, **Entity Framework Core** and **SQLite**, with unit tests in **xUnit** and a plain HTML/CSS/JavaScript dashboard.
+A small invoicing and payments service built with **C# / ASP.NET Core 8**, **Entity Framework Core** and **SQLite**, with a **GraphQL** endpoint (Hot Chocolate), unit tests in **xUnit**, and a **React + TypeScript** dashboard that talks to the API through **Apollo Client**.
 
 Customers get invoices, invoices take payments (full or partial), and payments can be refunded. The API enforces the rules that matter in payments: no overpaying, no refunding more than was paid, no double charges on retries.
 
@@ -12,34 +12,54 @@ Customers get invoices, invoices take payments (full or partial), and payments c
 - **Money stored as integer cents**, never floating point
 - **API key authentication**: only a SHA-256 hash of the key is stored, compared in constant time
 - **Input validation** on every request, plus clean JSON error responses (RFC 7807 problem details)
+- **GraphQL endpoint** (Hot Chocolate) alongside the REST API, sharing the same service layer
 - **Swagger UI** for trying the API in the browser
-- **Dashboard** page to create customers and invoices, take payments and issue refunds
+- **React + TypeScript dashboard** (Vite, Apollo Client) to create customers and invoices, take payments and issue refunds, with TypeScript types generated from the GraphQL schema
 - **Unit tests** covering the payment, refund and security rules
 
 ## Run it
 
-You need the [.NET 8 SDK](https://dotnet.microsoft.com/download) (installed with Visual Studio 2022).
+You need the [.NET 8 SDK](https://dotnet.microsoft.com/download) (installed with Visual Studio 2022) and [Node.js 22 LTS](https://nodejs.org).
+
+Build the dashboard once (it's written into `src/PaymentsApi/wwwroot`), then start the app:
 
 ```bash
+cd client
+npm install
+npm run build
+cd ..
 dotnet run --project src/PaymentsApi
 ```
 
 Then open:
 
-- Dashboard: http://localhost:5080
+- Dashboard: http://localhost:5080 (enter the API key at the top right)
+- GraphQL editor: http://localhost:5080/graphql
 - Swagger: http://localhost:5080/swagger (click **Authorize** and enter the key)
 
 The dev API key is `dev-key-change-me`. A `payments.db` SQLite file is created on first run with some sample data. Delete it to start fresh.
 
 In Visual Studio: open `PaymentsApi.sln`, set **PaymentsApi** as the startup project and press F5.
 
+### Working on the dashboard
+
+Keep the .NET app running, and in another terminal:
+
+```bash
+cd client
+npm run dev
+```
+
+Vite serves the dashboard at http://localhost:5173 with hot reload and forwards `/graphql` to the .NET app. After changing `schema.graphql` or any query in `client/src`, run `npm run codegen` to regenerate the TypeScript types in `client/src/gql`.
+
 ## Run the tests
 
 ```bash
-dotnet test
+dotnet test            # xUnit: service rules, API key check, GraphQL operations
+cd client && npm test  # Vitest: React components and money parsing
 ```
 
-Each test runs against a fresh in-memory SQLite database.
+Each .NET test runs against a fresh in-memory SQLite database.
 
 ## API
 
@@ -67,6 +87,28 @@ curl -X POST http://localhost:5080/api/invoices/1/payments \
 ```
 
 Sending that same request again returns the same payment instead of charging twice.
+
+## GraphQL
+
+The same operations are also available as GraphQL at `/graphql`, built with [Hot Chocolate](https://chillicream.com/docs/hotchocolate). Open http://localhost:5080/graphql in a browser for the query editor, and add the header `X-Api-Key: dev-key-change-me` in its connection settings.
+
+```graphql
+mutation {
+  recordPayment(invoiceId: 1, amountCents: 2500, idempotencyKey: "checkout-42") {
+    status
+    outstandingCents
+  }
+}
+```
+
+Both APIs call the same `PaymentService`, so the rules are enforced once. Business rule errors come back with a `PAYMENT_RULE` or `NOT_FOUND` code in `extensions.code`.
+
+`schema.graphql` is generated from the C# code. After changing the GraphQL types, regenerate it:
+
+```bash
+cd src/PaymentsApi
+dotnet run -- schema export --output ../../schema.graphql
+```
 
 ## Design notes
 

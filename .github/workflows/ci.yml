@@ -19,3 +19,22 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore
       - run: dotnet test --no-build --verbosity normal
+
+  frontend:
+    name: React typecheck, Vitest tests and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      # Fails if someone changed the schema or a query but forgot to rerun codegen.
+      - run: npm run codegen && git diff --exit-code -- src/gql
+      - run: npm test
+      - run: npm run build

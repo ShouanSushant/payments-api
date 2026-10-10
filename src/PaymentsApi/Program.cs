@@ -1,7 +1,8 @@
-	using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PaymentsApi.Data;
+using PaymentsApi.GraphQL;
 using PaymentsApi.Infrastructure;
 using PaymentsApi.Services;
 
@@ -15,6 +16,9 @@ builder.Services.AddDbContext<PaymentsDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Payments")));
 
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+// GraphQL endpoint at /graphql, built on the same PaymentService as the REST API.
+builder.Services.AddPaymentsGraphQL();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -62,8 +66,11 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.MapControllers();
+app.MapGraphQL();
 
-app.Run();
+// Works like app.Run(), but also supports Hot Chocolate commands such as
+// `dotnet run -- schema export --output ../../schema.graphql` (see README).
+await app.RunWithGraphQLCommandsAsync(args);
 
 // Lets test projects reference the app if integration tests are added later.
 public partial class Program
