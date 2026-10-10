@@ -6,3 +6,8 @@ obj/
 *.db-shm
 *.db-wal
 TestResults/
+node_modules/
+# Built by `npm run build` in client/
+src/PaymentsApi/wwwroot/
+client/test-results/
+client/playwright-report/
