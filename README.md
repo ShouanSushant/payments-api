@@ -1,6 +1,6 @@
 # Payments API
 
-A small invoicing and payments service built with **C# / ASP.NET Core 8**, **Entity Framework Core** and **SQLite**, with unit tests in **MSTest** and a plain HTML/CSS/JavaScript dashboard.
+A small invoicing and payments service built with **C# / ASP.NET Core 8**, **Entity Framework Core** and **SQLite**, with unit tests in **xUnit** and a plain HTML/CSS/JavaScript dashboard.
 
 Customers get invoices, invoices take payments (full or partial), and payments can be refunded. The API enforces the rules that matter in payments: no overpaying, no refunding more than was paid, no double charges on retries.
 

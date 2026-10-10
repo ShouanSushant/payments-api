@@ -6,17 +6,16 @@ using PaymentsApi.Services;
 
 namespace PaymentsApi.Tests;
 
-// Each test gets a fresh in-memory SQLite database, so tests run against
-// a real SQL engine (same as the app) but leave nothing behind.
-[TestClass]
-public class PaymentServiceTests
+// xUnit creates a new instance of this class for every test, so each test
+// gets a fresh in-memory SQLite database: a real SQL engine (same as the app)
+// that leaves nothing behind.
+public class PaymentServiceTests : IDisposable
 {
-    private SqliteConnection _connection = null!;
-    private PaymentsDbContext _db = null!;
-    private PaymentService _service = null!;
+    private readonly SqliteConnection _connection;
+    private readonly PaymentsDbContext _db;
+    private readonly PaymentService _service;
 
-    [TestInitialize]
-    public void Setup()
+    public PaymentServiceTests()
     {
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
@@ -30,8 +29,7 @@ public class PaymentServiceTests
         _service = new PaymentService(_db);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    public void Dispose()
     {
         _db.Dispose();
         _connection.Dispose();
@@ -45,7 +43,7 @@ public class PaymentServiceTests
 
     // ---------- Payments ----------
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_FullAmount_MarksInvoicePaid()
     {
         // Arrange
@@ -56,11 +54,11 @@ public class PaymentServiceTests
 
         // Assert
         var updated = await _service.GetInvoiceAsync(invoice.Id);
-        Assert.AreEqual(InvoiceStatus.Paid, updated.Status);
-        Assert.AreEqual(0L, InvoiceMath.OutstandingCents(updated));
+        Assert.Equal(InvoiceStatus.Paid, updated.Status);
+        Assert.Equal(0L, InvoiceMath.OutstandingCents(updated));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_PartialAmount_MarksInvoicePartiallyPaid()
     {
         var invoice = await NewInvoiceAsync(10_000);
@@ -68,32 +66,32 @@ public class PaymentServiceTests
         await _service.RecordPaymentAsync(invoice.Id, 2_500, null);
 
         var updated = await _service.GetInvoiceAsync(invoice.Id);
-        Assert.AreEqual(InvoiceStatus.PartiallyPaid, updated.Status);
-        Assert.AreEqual(7_500L, InvoiceMath.OutstandingCents(updated));
+        Assert.Equal(InvoiceStatus.PartiallyPaid, updated.Status);
+        Assert.Equal(7_500L, InvoiceMath.OutstandingCents(updated));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_MoreThanOutstanding_IsRejected()
     {
         var invoice = await NewInvoiceAsync(10_000);
         await _service.RecordPaymentAsync(invoice.Id, 6_000, null);
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RecordPaymentAsync(invoice.Id, 4_001, null));
     }
 
-    [DataTestMethod]
-    [DataRow(0L)]
-    [DataRow(-500L)]
+    [Theory]
+    [InlineData(0L)]
+    [InlineData(-500L)]
     public async Task RecordPayment_ZeroOrNegative_IsRejected(long amountCents)
     {
         var invoice = await NewInvoiceAsync();
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RecordPaymentAsync(invoice.Id, amountCents, null));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_SameIdempotencyKey_ChargesOnlyOnce()
     {
         var invoice = await NewInvoiceAsync(10_000);
@@ -102,42 +100,42 @@ public class PaymentServiceTests
         var first = await _service.RecordPaymentAsync(invoice.Id, 3_000, "order-123");
         var retry = await _service.RecordPaymentAsync(invoice.Id, 3_000, "order-123");
 
-        Assert.AreEqual(first.Id, retry.Id);
+        Assert.Equal(first.Id, retry.Id);
         var updated = await _service.GetInvoiceAsync(invoice.Id);
-        Assert.AreEqual(1, updated.Payments.Count);
-        Assert.AreEqual(3_000L, InvoiceMath.NetPaidCents(updated));
+        Assert.Single(updated.Payments);
+        Assert.Equal(3_000L, InvoiceMath.NetPaidCents(updated));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_ReusedKeyWithDifferentAmount_IsRejected()
     {
         var invoice = await NewInvoiceAsync(10_000);
         await _service.RecordPaymentAsync(invoice.Id, 3_000, "order-123");
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RecordPaymentAsync(invoice.Id, 5_000, "order-123"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_OnVoidInvoice_IsRejected()
     {
         var invoice = await NewInvoiceAsync();
         await _service.VoidInvoiceAsync(invoice.Id);
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RecordPaymentAsync(invoice.Id, 1_000, null));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RecordPayment_UnknownInvoice_ThrowsNotFound()
     {
-        await Assert.ThrowsExceptionAsync<NotFoundException>(
+        await Assert.ThrowsAsync<NotFoundException>(
             () => _service.RecordPaymentAsync(9_999, 1_000, null));
     }
 
     // ---------- Refunds ----------
 
-    [TestMethod]
+    [Fact]
     public async Task Refund_PartOfFullPayment_ReopensToPartiallyPaid()
     {
         var invoice = await NewInvoiceAsync(10_000);
@@ -146,11 +144,11 @@ public class PaymentServiceTests
         await _service.RefundAsync(payment.Id, 4_000, "Damaged item");
 
         var updated = await _service.GetInvoiceAsync(invoice.Id);
-        Assert.AreEqual(InvoiceStatus.PartiallyPaid, updated.Status);
-        Assert.AreEqual(4_000L, InvoiceMath.OutstandingCents(updated));
+        Assert.Equal(InvoiceStatus.PartiallyPaid, updated.Status);
+        Assert.Equal(4_000L, InvoiceMath.OutstandingCents(updated));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refund_MoreThanWasPaid_IsRejected()
     {
         var invoice = await NewInvoiceAsync(10_000);
@@ -158,33 +156,33 @@ public class PaymentServiceTests
         await _service.RefundAsync(payment.Id, 3_000, "First refund");
 
         // Only 2,000 cents left on this payment.
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RefundAsync(payment.Id, 2_001, "Second refund"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refund_WithoutReason_IsRejected()
     {
         var invoice = await NewInvoiceAsync();
         var payment = await _service.RecordPaymentAsync(invoice.Id, 1_000, null);
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.RefundAsync(payment.Id, 500, "  "));
     }
 
     // ---------- Invoices and customers ----------
 
-    [TestMethod]
+    [Fact]
     public async Task VoidInvoice_WithMoneyStillPaid_IsRejected()
     {
         var invoice = await NewInvoiceAsync();
         await _service.RecordPaymentAsync(invoice.Id, 1_000, null);
 
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.VoidInvoiceAsync(invoice.Id));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task VoidInvoice_AfterFullRefund_Succeeds()
     {
         var invoice = await NewInvoiceAsync();
@@ -193,16 +191,16 @@ public class PaymentServiceTests
 
         var voided = await _service.VoidInvoiceAsync(invoice.Id);
 
-        Assert.AreEqual(InvoiceStatus.Void, voided.Status);
+        Assert.Equal(InvoiceStatus.Void, voided.Status);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateCustomer_DuplicateEmail_IsRejected()
     {
         await _service.CreateCustomerAsync("First", "same@example.com");
 
         // Different casing and spaces should still count as the same email.
-        await Assert.ThrowsExceptionAsync<PaymentRuleException>(
+        await Assert.ThrowsAsync<PaymentRuleException>(
             () => _service.CreateCustomerAsync("Second", "  SAME@example.com "));
     }
 }
