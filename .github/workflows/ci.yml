@@ -38,3 +38,29 @@ jobs:
       - run: npm run codegen && git diff --exit-code -- src/gql
       - run: npm test
       - run: npm run build
+
+  e2e:
+    name: Playwright end-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+        working-directory: client
+      - run: npx playwright install --with-deps chromium
+        working-directory: client
+      # Builds the dashboard, starts the .NET app and runs the browser tests against it.
+      - run: npm run e2e
+        working-directory: client
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: client/playwright-report

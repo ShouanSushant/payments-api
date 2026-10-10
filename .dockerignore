@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/*.db
+src/PaymentsApi/wwwroot/
+client/test-results/
+client/playwright-report/
+.git/
+.vs/
