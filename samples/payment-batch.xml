@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A sample bank payment file. Amounts are in cents (2500 = $25.00).
+     Each reference is used as an idempotency key, so importing this file
+     a second time won't charge anyone twice. -->
+<PaymentBatch>
+  <Payment reference="BANK-2026-10-0001" invoiceId="1" amountCents="2500" />
+  <Payment reference="BANK-2026-10-0002" invoiceId="2" amountCents="4275" />
+  <Payment reference="BANK-2026-10-0003" invoiceId="3" amountCents="10000" />
+</PaymentBatch>

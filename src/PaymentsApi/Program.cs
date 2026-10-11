@@ -16,6 +16,7 @@ builder.Services.AddDbContext<PaymentsDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Payments")));
 
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPaymentImportService, PaymentImportService>();
 
 // GraphQL endpoint at /graphql, built on the same PaymentService as the REST API.
 builder.Services.AddPaymentsGraphQL();

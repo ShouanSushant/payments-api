@@ -15,6 +15,7 @@ Customers get invoices, invoices take payments (full or partial), and payments c
 - **API key authentication**: only a SHA-256 hash of the key is stored, compared in constant time
 - **Input validation** on every request, plus clean JSON error responses (RFC 7807 problem details)
 - **GraphQL endpoint** (Hot Chocolate) alongside the REST API, sharing the same service layer
+- **XML batch import** of payments, like a bank payment file: each row is validated on its own, re-importing a file never double-charges, and DTDs are blocked to prevent XXE attacks
 - **Swagger UI** for trying the API in the browser
 - **React + TypeScript dashboard** (Vite, Apollo Client) to create customers and invoices, take payments and issue refunds, with TypeScript types generated from the GraphQL schema
 - **Tests at three levels**: xUnit for the service rules and GraphQL operations, Vitest for React components, and Playwright for end-to-end browser tests against the running app
@@ -91,6 +92,7 @@ All `/api` requests need the header `X-Api-Key`. Amounts are in cents (`2500` = 
 | POST | `/api/invoices/{id}/void` | Void an invoice with nothing paid on it |
 | POST | `/api/invoices/{id}/payments` | Pay `{ amountCents }`, optional `Idempotency-Key` header |
 | POST | `/api/payments/{id}/refunds` | Refund `{ amountCents, reason }` |
+| POST | `/api/payments/import` | Import a `<PaymentBatch>` XML file (`Content-Type: application/xml`) |
 
 Example:
 
@@ -103,6 +105,29 @@ curl -X POST http://localhost:5080/api/invoices/1/payments \
 ```
 
 Sending that same request again returns the same payment instead of charging twice.
+
+### Importing a payment file (XML)
+
+Banks and billing systems often send payments as a file. `samples/payment-batch.xml` shows the format:
+
+```xml
+<PaymentBatch>
+  <Payment reference="BANK-2026-10-0001" invoiceId="1" amountCents="2500" />
+</PaymentBatch>
+```
+
+```bash
+curl -X POST http://localhost:5080/api/payments/import \
+  -H "X-Api-Key: dev-key-change-me" \
+  -H "Content-Type: application/xml" \
+  --data-binary @samples/payment-batch.xml
+```
+
+The response is a JSON summary with the outcome of every row (`Imported`, `AlreadyImported` or `Failed` with the reason):
+
+- Each row goes through the same `PaymentService` rules as a normal payment, and one bad row doesn't stop the others.
+- The row's `reference` is used as the idempotency key, so importing the same file twice doesn't charge anyone twice.
+- The parser refuses DTDs, which blocks XML External Entity (XXE) attacks, and files are capped at 1 MB and 500 rows.
 
 ## GraphQL
 
@@ -132,9 +157,10 @@ dotnet run -- schema export --output ../../schema.graphql
 src/PaymentsApi/          ASP.NET Core app
   Controllers/            REST endpoints (HTTP only)
   GraphQL/                Hot Chocolate query, mutation and type definitions
-  Services/               PaymentService (business rules) and InvoiceMath
+  Services/               PaymentService (business rules), InvoiceMath, XML import
   Data/, Models/, Dtos/   EF Core context, entities, request/response shapes
 tests/PaymentsApi.Tests/  xUnit tests
+samples/                  Sample XML payment file
 client/                   React + TypeScript dashboard (Vite)
   src/graphql/            GraphQL operations used by the dashboard
   src/gql/                Types generated from schema.graphql (don't edit by hand)
