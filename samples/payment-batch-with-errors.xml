@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A batch with mistakes on purpose, to show what the checker catches. -->
+<PaymentBatch>
+  <Payment reference="BANK-2026-10-0101" invoiceId="1" amountCents="2500" />
+  <Payment reference="" invoiceId="2" amountCents="1000" />
+  <Payment reference="BANK-2026-10-0103" invoiceId="two" amountCents="1000" />
+  <Payment reference="BANK-2026-10-0104" invoiceId="3" amountCents="12.50" />
+  <Payment reference="BANK-2026-10-0105" invoiceId="3" amountCents="200000000" />
+  <Payment reference="BANK-2026-10-0101" invoiceId="1" amountCents="2500" />
+  <Payment reference="BANK-2026-10-0107" invoiceId="4" amountCents="7550" />
+</PaymentBatch>
