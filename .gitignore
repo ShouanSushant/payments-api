@@ -14,3 +14,7 @@ client/playwright-report/
 
 # Output written by the Power Automate flow
 samples/payments-results.txt
+
+# Reports written by tools/xml_batch_report.py
+out/
+__pycache__/
